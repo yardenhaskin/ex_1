@@ -36,8 +36,8 @@ class Solution:
 
         match_p_src = match_p_src.astype(int)
         match_p_dst = match_p_dst.astype(int)
-        A= []
-        A = np.array(A)
+        #A= []
+        A = np.zeros((2*match_p_src.shape[1],9))
         for i in range(match_p_src.shape[1]):
             A[2*i] = [match_p_src[0][i],match_p_src[1][i],1,0,0,0,-match_p_dst[0][i]*match_p_src[0][i],-match_p_dst[0][i]*match_p_src[1][i],-match_p_dst[0][i]]
             A[2*i+1] = [0,0,0,match_p_src[0][i], match_p_src[1][i], 1 , -match_p_dst[1][i] * match_p_src[0][i], -match_p_dst[1][i] * match_p_src[1][i], -match_p_dst[1][i]]
@@ -96,17 +96,19 @@ class Solution:
         for u in range(src_image.shape[0]):
             for v in range(src_image.shape[1]):
                 #x = np.array([u,v,1])
-                u_new = (np.dot(homography[0:1,:] ,np.array([u,v,1]))) / (np.dot(homography[2:2,],np.array([u,v,1])))
+                #u_new = (np.dot(homography[0:1,:] ,np.array([u,v,1])))[0] / (np.dot(homography[2:2,],np.array([u,v,1])))[0]
+                top = (np.dot(homography[0:1,:] ,np.array([u,v,1])))[0]
+                bottom = (np.dot(homography[2:2,],np.array([u,v,1])))[0]
                 #print(f"u_new:{u_new}")
                 u_new_floor = u_new.astype(int)
                 #print(f"u_new_floor:{u_new_floor}")
-                v_new = (np.dot(homography[0:1,:] ,np.array([u,v,1]))) / (np.dot(homography[1:2,:],np.array([u,v,1])))
+                v_new = (np.dot(homography[0:1,:] ,np.array([u,v,1])))[0] / (np.dot(homography[1:2,:],np.array([u,v,1])))[0]
                 #print(f"v_new:{v_new}")
                 v_new_floor = v_new.astype(int)
                 #print(f"v_new_floor:{v_new_floor}")
                 new_image[u_new_floor, v_new_floor,:] = src_image[u,v, :]
         #print(f"new_image:{new_image}")
-        return new_image/255
+        return new_image
 
         """Compute a Forward-Homography in the Naive approach, using loops.
 
