@@ -36,9 +36,8 @@ class Solution:
 
         match_p_src = match_p_src.astype(int)
         match_p_dst = match_p_dst.astype(int)
-        #A= []
         A = np.zeros((2*match_p_src.shape[1],9))
-        for i in range(match_p_src.shape[1]):
+        for i in range(match_p_src.shape[1]): #creating 2 rows for each point in matches_mat
             A[2*i] = [match_p_src[0][i],match_p_src[1][i],1,0,0,0,-match_p_dst[0][i]*match_p_src[0][i],-match_p_dst[0][i]*match_p_src[1][i],-match_p_dst[0][i]]
             A[2*i+1] = [0,0,0,match_p_src[0][i], match_p_src[1][i], 1 , -match_p_dst[1][i] * match_p_src[0][i], -match_p_dst[1][i] * match_p_src[1][i], -match_p_dst[1][i]]
         U,S,V = np.linalg.svd(A)
@@ -90,24 +89,6 @@ class Solution:
             homography: np.ndarray,
             src_image: np.ndarray,
             dst_image_shape: tuple = (1088, 1452, 3)) -> np.ndarray:
-        new_image = np.zeros(dst_image_shape)
-        #print(f"initial_new_image:{new_image}")
-        #print(f"initial_new_image:{new_image.shape}")
-        for u in range(src_image.shape[0]):
-            for v in range(src_image.shape[1]):
-                #x = np.array([u,v,1])
-                u_new = (np.dot(homography[0,:] ,np.array([u,v,1])))/ (np.dot(homography[2,:],np.array([u,v,1])))
-                #print(f"u_new:{u_new}")
-                u_new_floor = u_new.astype(np.uint)
-                #print(f"u_new_floor:{u_new_floor}")
-                v_new = (np.dot(homography[1,:] ,np.array([u,v,1])))/ (np.dot(homography[2,:],np.array([u,v,1])))
-                #print(f"v_new:{v_new}")
-                v_new_floor = v_new.astype(np.uint16)
-                #print(f"v_new_floor:{v_new_floor}")
-                if (u_new_floor < dst_image_shape[0]) and (v_new_floor < dst_image_shape[1]):
-                    new_image[u_new_floor, v_new_floor,:] = src_image[u,v, :]
-        #print(f"new_image:{new_image}")
-        return new_image
 
         """Compute a Forward-Homography in the Naive approach, using loops.
 
@@ -128,9 +109,22 @@ class Solution:
             The forward homography of the source image to its destination.
         """
 
-        # return new_image
         """INSERT YOUR CODE HERE"""
-        pass
+        new_image = np.zeros(dst_image_shape)
+
+        for u in range(src_image.shape[0]):
+            for v in range(src_image.shape[1]):
+                u_new = (np.dot(homography[0,:] ,np.array([u,v,1])))/ (np.dot(homography[2,:],np.array([u,v,1])))
+                u_new_floor = u_new.astype(np.uint)
+
+                v_new = (np.dot(homography[1,:] ,np.array([u,v,1])))/ (np.dot(homography[2,:],np.array([u,v,1])))
+                v_new_floor = v_new.astype(np.uint)
+
+                if (u_new_floor < dst_image_shape[0]) and (v_new_floor < dst_image_shape[1]): #check going out of bounds
+                    new_image[u_new_floor, v_new_floor,:] = src_image[u,v, :]
+
+        return new_image
+
 
     @staticmethod
     def compute_forward_homography_fast(
