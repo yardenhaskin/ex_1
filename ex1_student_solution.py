@@ -96,17 +96,16 @@ class Solution:
         for u in range(src_image.shape[0]):
             for v in range(src_image.shape[1]):
                 #x = np.array([u,v,1])
-                #u_new = (np.dot(homography[0:1,:] ,np.array([u,v,1])))[0] / (np.dot(homography[2:2,],np.array([u,v,1])))[0]
-                top = (np.dot(homography[0:1,:] ,np.array([u,v,1])))[0]
-                bottom = (np.dot(homography[2:2,],np.array([u,v,1])))[0]
+                u_new = (np.dot(homography[0,:] ,np.array([u,v,1])))/ (np.dot(homography[2,:],np.array([u,v,1])))
                 #print(f"u_new:{u_new}")
-                u_new_floor = u_new.astype(int)
+                u_new_floor = u_new.astype(np.uint)
                 #print(f"u_new_floor:{u_new_floor}")
-                v_new = (np.dot(homography[0:1,:] ,np.array([u,v,1])))[0] / (np.dot(homography[1:2,:],np.array([u,v,1])))[0]
+                v_new = (np.dot(homography[1,:] ,np.array([u,v,1])))/ (np.dot(homography[2,:],np.array([u,v,1])))
                 #print(f"v_new:{v_new}")
-                v_new_floor = v_new.astype(int)
+                v_new_floor = v_new.astype(np.uint16)
                 #print(f"v_new_floor:{v_new_floor}")
-                new_image[u_new_floor, v_new_floor,:] = src_image[u,v, :]
+                if (u_new_floor < dst_image_shape[0]) and (v_new_floor < dst_image_shape[1]):
+                    new_image[u_new_floor, v_new_floor,:] = src_image[u,v, :]
         #print(f"new_image:{new_image}")
         return new_image
 
@@ -422,7 +421,7 @@ class Solution:
         pass
 
 
-if __name__== '__main__':
+if __name__ == '__main__':
     import scipy.io
     matches = scipy.io.loadmat('matches_perfect.mat')
     source = plt.imread('src.jpg')
@@ -432,4 +431,3 @@ if __name__== '__main__':
     result = forward_homography_slow.astype(np.uint8)
     plt.imshow(result)
     plt.show()
-    print("finished running")
