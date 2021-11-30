@@ -189,11 +189,12 @@ class Solution:
         y_new = np.array(xyf_t[1, :])
 
         new_image = np.zeros(dst_image_shape)
-        condition1 = [(x_new < dst_image_shape[0]) and (x_new > 0)]
-        condition2 = [(y_new < dst_image_shape[1]) and (y_new > 0)]
+        condition1 = (x_new <= dst_image_shape[0]) & (x_new >= 0)
+        condition2 = (y_new <= dst_image_shape[1]) & (y_new >= 0)
         #new_image[np.where(xy_t[0] < dst_image_shape[0]),np.where(xy_t[1] < dst_image_shape[1])] = src_image[xy[0],xy[1]]
 
-        new_image[np.select(condi)] = src_image[xy[0],xy[1]]
+        new_image[np.select(condition1,x_new),np.select(condition2,y_new)] = src_image[xy[0],xy[1]]
+        #new_image[condition1,condition2,:] = src_image[xy[0],xy[1],:]
         return new_image
         #pass
 
