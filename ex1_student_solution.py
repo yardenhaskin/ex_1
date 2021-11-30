@@ -155,7 +155,47 @@ class Solution:
         """
         # return new_image
         """INSERT YOUR CODE HERE"""
-        pass
+        x = np.arange(src_image.shape[0])
+        y = np.arange(src_image.shape[1])
+        xy = np.meshgrid(x, y)
+
+        # xyf has all the same coordinates as xy, but they are all
+        # columns in a 3xIMSIZE matrix:
+        # [x0  x1 ...         x_IMSIZE
+        # y0   y1...         y_IMSIZE
+        # 1    1...          1]
+        xyf = np.zeros((3, xy[0].flatten().shape[0]))
+
+        xyf[0, :] = xy[0].flatten()
+        xyf[1, :] = xy[1].flatten()
+        xyf[2, :] = np.ones(xyf[0, 1].shape)
+
+        # Now ready to apply the homography to xyf
+        # xyf_t is the coordinates in the *original* image im
+        xyf_t = np.dot(homography, xyf)
+        xyf_t[0, :] = xyf_t[0, :] / xyf_t[2, :]
+        xyf_t[1, :] = xyf_t[1, :] / xyf_t[2, :]
+        xyf_t[2, :] = xyf_t[2, :] / xyf_t[2, :]
+
+        # Round the coordinates. In effect, this is
+        # nearest-neighbour interpolation
+        xyf_t = np.around(xyf_t).astype(np.int16)
+
+        # Reshape the arrays back to be in the same format as
+        # xy
+        # xy_t = [xyf_t[0, :].reshape(xy[0].shape),
+        #         xyf_t[1, :].reshape(xy[1].shape)]
+        x_new = np.array(xyf_t[0, :])
+        y_new = np.array(xyf_t[1, :])
+
+        new_image = np.zeros(dst_image_shape)
+        condition1 = [(x_new < dst_image_shape[0]) and (x_new > 0)]
+        condition2 = [(y_new < dst_image_shape[1]) and (y_new > 0)]
+        #new_image[np.where(xy_t[0] < dst_image_shape[0]),np.where(xy_t[1] < dst_image_shape[1])] = src_image[xy[0],xy[1]]
+
+        new_image[np.select(condi)] = src_image[xy[0],xy[1]]
+        return new_image
+        #pass
 
     @staticmethod
     def test_homography(homography: np.ndarray,
@@ -421,7 +461,11 @@ if __name__ == '__main__':
     source = plt.imread('src.jpg')
     solution = Solution()
     H = solution.compute_homography_naive(matches['match_p_src'],matches['match_p_dst'])
-    forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
-    result = forward_homography_slow.astype(np.uint8)
-    plt.imshow(result)
-    plt.show()
+    #forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
+    #result = forward_homography_slow.astype(np.uint8)
+    #plt.imshow(result)
+    #plt.show()
+    forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
+    result = forward_homography_fast.astype(np.uint8)
+    # plt.imshow(result)
+    # plt.show()
