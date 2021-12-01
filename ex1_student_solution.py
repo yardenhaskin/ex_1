@@ -250,7 +250,19 @@ class Solution:
         """
         # return fit_percent, dist_mse
         """INSERT YOUR CODE HERE"""
-        pass
+
+        xy_src = np.vstack([match_p_src,np.ones(match_p_src.shape[1])])
+        xy_dst = np.vstack([match_p_dst,np.ones(match_p_dst.shape[1])])
+        transformed_xy_src = np.dot(homography,xy_src)
+        # Normalize
+        transformed_xy_src = transformed_xy_src / transformed_xy_src[2,:]
+        error = transformed_xy_src - xy_dst
+
+        abs_value_error = np.array([np.linalg.norm(error[:2, i]) for i in range(error.shape[1])])  #not using the 1s in homogoneous coordinates
+        fit_points = [i for i in range(len(abs_value_error)) if abs_value_error[i] < max_err]
+        fit_percent = len(fit_points) / match_p_src.shape[1]
+        dist_mse = np.mean(abs_value_error[fit_points])
+        return fit_percent, dist_mse
 
     @staticmethod
     def meet_the_model_points(homography: np.ndarray,
@@ -483,15 +495,16 @@ class Solution:
 
 if __name__ == '__main__':
     import scipy.io
-    matches = scipy.io.loadmat('matches_perfect.mat')
+    matches = scipy.io.loadmat('matches.mat')
     source = plt.imread('src.jpg')
     solution = Solution()
     H = solution.compute_homography_naive(matches['match_p_src'],matches['match_p_dst'])
-    #forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
-    #result = forward_homography_slow.astype(np.uint8)
-    #plt.imshow(result)
-    #plt.show()
-    forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
-    result = forward_homography_fast.astype(np.uint8)
-    plt.imshow(result)
-    plt.show()
+    # forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
+    # result = forward_homography_slow.astype(np.uint8)
+    # plt.imshow(result)
+    # plt.show()
+    # forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
+    # result = forward_homography_fast.astype(np.uint8)
+    # plt.imshow(result)
+    # plt.show()
+    print(solution.test_homography(H,matches['match_p_src'],matches['match_p_dst'],25))
