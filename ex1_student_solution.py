@@ -291,7 +291,17 @@ class Solution:
         """
         # return mp_src_meets_model, mp_dst_meets_model
         """INSERT YOUR CODE HERE"""
-        pass
+        xy_src = np.vstack([match_p_src, np.ones(match_p_src.shape[1])])
+        xy_dst = np.vstack([match_p_dst, np.ones(match_p_dst.shape[1])])
+        transformed_xy_src = np.dot(homography, xy_src)
+        # Normalize
+        transformed_xy_src = transformed_xy_src / transformed_xy_src[2, :]
+        error = transformed_xy_src - xy_dst
+
+        abs_value_error = np.array([np.linalg.norm(error[:2, i]) for i in
+                                    range(error.shape[1])])  # not using the 1s in homogoneous coordinates
+        fit_points = [i for i in range(len(abs_value_error)) if abs_value_error[i] < max_err]
+        return (match_p_src[:,fit_points],match_p_dst[:,fit_points])
 
     def compute_homography(self,
                            match_p_src: np.ndarray,
@@ -507,4 +517,5 @@ if __name__ == '__main__':
     # result = forward_homography_fast.astype(np.uint8)
     # plt.imshow(result)
     # plt.show()
-    print(solution.test_homography(H,matches['match_p_src'],matches['match_p_dst'],25))
+    #print(solution.test_homography(H,matches['match_p_src'],matches['match_p_dst'],25))
+    print(solution.meet_the_model_points(H,matches['match_p_src'],matches['match_p_dst'],25))
