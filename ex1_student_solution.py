@@ -155,48 +155,73 @@ class Solution:
         """
         # return new_image
         """INSERT YOUR CODE HERE"""
-        x = np.arange(src_image.shape[0])
-        y = np.arange(src_image.shape[1])
-        xy = np.meshgrid(x, y)
-
-        # xyf has all the same coordinates as xy, but they are all
-        # columns in a 3xIMSIZE matrix:
-        # [x0  x1 ...         x_IMSIZE
-        # y0   y1...         y_IMSIZE
-        # 1    1...          1]
-        xyf = np.zeros((3, xy[0].flatten().shape[0]))
-
-        xyf[0, :] = xy[0].flatten()
-        xyf[1, :] = xy[1].flatten()
-        xyf[2, :] = np.ones(xyf[0, 1].shape)
-
-        # Now ready to apply the homography to xyf
-        # xyf_t is the coordinates in the *original* image im
-        xyf_t = np.dot(homography, xyf)
-        xyf_t[0, :] = xyf_t[0, :] / xyf_t[2, :]
-        xyf_t[1, :] = xyf_t[1, :] / xyf_t[2, :]
-        xyf_t[2, :] = xyf_t[2, :] / xyf_t[2, :]
-
-        # Round the coordinates. In effect, this is
-        # nearest-neighbour interpolation
-        xyf_t = np.around(xyf_t).astype(np.int16)
-
-        # Reshape the arrays back to be in the same format as
-        # xy
+        # # x = np.arange(src_image.shape[0])
+        # # y = np.arange(src_image.shape[1])
+        # # xy = np.meshgrid(x, y)
+        # #
+        # #
+        # # xyf = np.zeros((3, (src_image.shape[0]*src_image.shape[1])))
+        # #
+        # # xyf[0, :] = np.array(xy[0].flatten())
+        # # xyf[1, :] = np.array(xy[1].flatten())
+        # # xyf[2, :] = np.ones(src_image.shape[0]*src_image.shape[1])
+        # #
+        # indices = np.indices((src_image.shape[0], src_image.shape[1]))
+        # # Add row of 1's
+        # indices_hom = np.vstack((indices, np.ones((1, indices.shape[1], indices.shape[2])))).reshape(3, -1)
+        # #
+        # #
+        # #xyf_t = np.matmul(homography, xyf)
+        # xyf_t = np.dot(homography, indices_hom)
+        # xyf_t[0, :] = xyf_t[0, :] / xyf_t[2, :]
+        # xyf_t[1, :] = xyf_t[1, :] / xyf_t[2, :]
+        # xyf_t[2, :] = xyf_t[2, :] / xyf_t[2, :]
+        #
+        #
+        # xyf_t = np.round(xyf_t).astype(int)
+        # #
+        # # # Round the coordinates. In effect, this is
+        # # # nearest-neighbour interpolation
+        # xyf_t = np.around(xyf_t).astype(np.int32)
+        # # #xyf_t = np.around(np.dot(homography, xyf)).astype(np.int16)
+        # #
+        # # # Reshape the arrays back to be in the same format as
+        # # # xy
         # xy_t = [xyf_t[0, :].reshape(xy[0].shape),
-        #         xyf_t[1, :].reshape(xy[1].shape)]
-        x_new = np.array(xyf_t[0, :])
-        y_new = np.array(xyf_t[1, :])
+        #          xyf_t[1, :].reshape(xy[1].shape)]
+        # x_new = np.array(xyf_t[0, :])
+        # y_new = np.array(xyf_t[1, :])
+        # #
+        # new_image = np.zeros(dst_image_shape)
+        # condition1 = (x_new <= dst_image_shape[0])
+        # condition2 = (y_new <= dst_image_shape[1])
+        # new_image[np.where(xy_t[0] < dst_image_shape[0]),np.where(xy_t[1] < dst_image_shape[1])] = src_image[xy[0],xy[1]]
+        # #
+        # new_image[np.select(condition1,x_new),np.select(condition2,y_new),:] = src_image[xy[0],xy[1],:]
+        # new_image[condition1,condition2,:] = src_image[xy[0],xy[1],:]
+        # return new_image
+        # #pass
 
+        # Yarden's code:
+
+        # Create meshgrid
+
+
+
+        meshgrid = np.indices((src_image.shape[0], src_image.shape[1]))
+        # Create homogoneous coordinates matrix
+        hom_matrix = np.vstack((meshgrid, np.ones((1, meshgrid.shape[1], meshgrid.shape[2])))).reshape(3, -1)
+        # Matrix multiplication
+        trans_matrix = np.dot(homography,hom_matrix)
+        # Normalize to get real values
+        x_new = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],src_image.shape[1])
+        y_new = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],src_image.shape[1])
+        # Make sure the pixels in the correct range
+        x_new = np.clip(x_new, 0, dst_image_shape[0] - 1)
+        y_new = np.clip(y_new, 0, dst_image_shape[1] - 1)
         new_image = np.zeros(dst_image_shape)
-        condition1 = (x_new <= dst_image_shape[0]) & (x_new >= 0)
-        condition2 = (y_new <= dst_image_shape[1]) & (y_new >= 0)
-        #new_image[np.where(xy_t[0] < dst_image_shape[0]),np.where(xy_t[1] < dst_image_shape[1])] = src_image[xy[0],xy[1]]
-
-        new_image[np.select(condition1,x_new),np.select(condition2,y_new)] = src_image[xy[0],xy[1]]
-        #new_image[condition1,condition2,:] = src_image[xy[0],xy[1],:]
+        new_image[x_new, y_new] = src_image[meshgrid[0], meshgrid[1]]
         return new_image
-        #pass
 
     @staticmethod
     def test_homography(homography: np.ndarray,
@@ -468,5 +493,5 @@ if __name__ == '__main__':
     #plt.show()
     forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
     result = forward_homography_fast.astype(np.uint8)
-    # plt.imshow(result)
-    # plt.show()
+    plt.imshow(result)
+    plt.show()
