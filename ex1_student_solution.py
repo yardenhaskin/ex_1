@@ -205,9 +205,6 @@ class Solution:
         # Yarden's code:
 
         # Create meshgrid
-
-
-
         meshgrid = np.indices((src_image.shape[0], src_image.shape[1]))
         # Create homogoneous coordinates matrix
         hom_matrix = np.vstack((meshgrid, np.ones((1, meshgrid.shape[1], meshgrid.shape[2])))).reshape(3, -1)
@@ -326,7 +323,7 @@ class Solution:
         """
         # use class notations:
         w = inliers_percent
-        # t = max_err
+        t = max_err
         # p = parameter determining the probability of the algorithm to
         # succeed
         p = 0.99
@@ -339,14 +336,23 @@ class Solution:
         # return homography
         """INSERT YOUR CODE HERE"""
         number_of_points = match_p_src.shape[1] #total number of points
-        for i in range(k): # LOOP for k iterations
+        error = np.inf
+        H = []
+        for _ in range(k): # LOOP for k iterations
             points_indices = np.random.randint(1,number_of_points,n)
             src_points = match_p_src[:,points_indices]
             dst_points = match_p_dst[:,points_indices]
             curr_h = self.compute_homography_naive(src_points,dst_points)
-
-
-        pass
+            fit_percent, error = self.test_homography(curr_h,match_p_src,match_p_dst,t)
+            if fit_percent > d:
+                meet_src_points,meet_dst_points = self.meet_the_model_points(curr_h,match_p_src,match_p_dst,t)
+                recomputed_h = self.compute_homography_naive(meet_src_points,meet_dst_points)
+                new_fit_percent, new_error = self.test_homography(recomputed_h,match_p_src,match_p_dst,t)
+                if new_error < error:
+                    H = recomputed_h
+        if H == []:
+            print('THe algorithm did not manage to find a good result')
+        return H
 
     @staticmethod
     def compute_backward_mapping(
@@ -376,7 +382,35 @@ class Solution:
 
         # return backward_warp
         """INSERT YOUR CODE HERE"""
-        pass
+        # Create meshgrid
+        dst_meshgrid = np.indices((dst_image_shape[0], dst_image_shape[1]))
+        # Create homogoneous coordinates matrix
+        hom_matrix = np.vstack((dst_meshgrid, np.ones((1, dst_meshgrid.shape[1], dst_meshgrid.shape[2])))).reshape(3, -1)
+        # Matrix multiplication
+        trans_matrix = np.dot(backward_projective_homography, hom_matrix)
+
+        trans_matrix[0] = trans_matrix[0] / trans_matrix[2]
+        trans_matrix[1] = trans_matrix[1] / trans_matrix[2]
+        trans_matrix[2] = trans_matrix[2] / trans_matrix[2]
+
+        dst_x = trans_matrix[0,:].reshape(dst_image_shape[0],dst_image_shape[1])
+        dst_y = trans_matrix[1,:].reshape(dst_image_shape[0],dst_image_shape[1])
+
+        # x_new = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],
+        #                                                                            src_image.shape[1])
+        # y_new = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],
+        #                                                                            src_image.shape[1])
+
+        # Create meshgrid of source image coordinates
+        source_meshgrid = np.indices((src_image.shape[0], src_image.shape[1]))
+        # source_matrix = np.vstack((source_meshgrid, np.ones((1,src_image.shape[0],src_image.shape[1])))).reshape(3,-1)
+
+        src_x = source_meshgrid[0].reshape(src_image.shape[0],src_image.shape[1])
+        src_y = source_meshgrid[1].reshape(src_image.shape[0],src_image.shape[1])
+
+        result = scipy.interpolate.griddata((src_x,src_y),src_image[src_x,src_y,:],(dst_x,dst_y),method='cubic')
+        return result
+
 
     @staticmethod
     def find_panorama_shape(src_image: np.ndarray,
@@ -522,14 +556,17 @@ if __name__ == '__main__':
     # plt.imshow(source)
     # plt.scatter(matches['match_p_src'][0],matches['match_p_src'][1],c='red')
     solution = Solution()
-    H = solution.compute_homography_naive(matches['match_p_src'],matches['match_p_dst'])
+    # H = solution.compute_homography_naive(matches['match_p_src'],matches['match_p_dst'])
+    H = solution.compute_homography(matches['match_p_src'],matches['match_p_dst'],0.8,25)
+    H_inv = np.linalg.inv(H)
+    backward_homography = solution.compute_backward_mapping(H_inv,source,(1088,1452,3))
     # forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
     # result = forward_homography_slow.astype(np.uint8)
     # plt.imshow(result)
     # plt.show()
-    forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
-    result = forward_homography_fast.astype(np.uint8)
-    plt.imshow(result)
-    plt.show()
+    # forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
+    # result = forward_homography_fast.astype(np.uint8)
+    # plt.imshow(result)
+    # plt.show()
     #print(solution.test_homography(H,matches['match_p_src'],matches['match_p_dst'],25))
     # print(solution.meet_the_model_points(H,matches['match_p_src'],matches['match_p_dst'],25))
