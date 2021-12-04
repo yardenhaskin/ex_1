@@ -261,7 +261,10 @@ class Solution:
         abs_value_error = np.array([np.linalg.norm(error[:2, i]) for i in range(error.shape[1])])  #not using the 1s in homogoneous coordinates
         fit_points = [i for i in range(len(abs_value_error)) if abs_value_error[i] < max_err]
         fit_percent = len(fit_points) / match_p_src.shape[1]
-        dist_mse = np.mean(abs_value_error[fit_points])
+        if not fit_percent:
+            dist_mse = 10**9
+        else:
+            dist_mse = np.mean(abs_value_error[fit_points])
         return fit_percent, dist_mse
 
     @staticmethod
@@ -321,20 +324,28 @@ class Solution:
         Returns:
             homography: Projective transformation matrix from src to dst.
         """
-        # # use class notations:
-        # w = inliers_percent
-        # # t = max_err
-        # # p = parameter determining the probability of the algorithm to
-        # # succeed
-        # p = 0.99
-        # # the minimal probability of points which meets with the model
-        # d = 0.5
-        # # number of points sufficient to compute the model
-        # n = 4
-        # # number of RANSAC iterations (+1 to avoid the case where w=1)
-        # k = int(np.ceil(np.log(1 - p) / np.log(1 - w ** n))) + 1
+        # use class notations:
+        w = inliers_percent
+        # t = max_err
+        # p = parameter determining the probability of the algorithm to
+        # succeed
+        p = 0.99
+        # the minimal probability of points which meets with the model
+        d = 0.5
+        # number of points sufficient to compute the model
+        n = 4
+        # number of RANSAC iterations (+1 to avoid the case where w=1)
+        k = int(np.ceil(np.log(1 - p) / np.log(1 - w ** n))) + 1
         # return homography
         """INSERT YOUR CODE HERE"""
+        number_of_points = match_p_src.shape[1] #total number of points
+        for i in range(k): # LOOP for k iterations
+            points_indices = np.random.randint(1,number_of_points,n)
+            src_points = match_p_src[:,points_indices]
+            dst_points = match_p_dst[:,points_indices]
+            curr_h = self.compute_homography_naive(src_points,dst_points)
+
+
         pass
 
     @staticmethod
@@ -507,15 +518,18 @@ if __name__ == '__main__':
     import scipy.io
     matches = scipy.io.loadmat('matches.mat')
     source = plt.imread('src.jpg')
+    # dst = plt.imread('dst.jpg')
+    # plt.imshow(source)
+    # plt.scatter(matches['match_p_src'][0],matches['match_p_src'][1],c='red')
     solution = Solution()
     H = solution.compute_homography_naive(matches['match_p_src'],matches['match_p_dst'])
     # forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
     # result = forward_homography_slow.astype(np.uint8)
     # plt.imshow(result)
     # plt.show()
-    # forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
-    # result = forward_homography_fast.astype(np.uint8)
-    # plt.imshow(result)
-    # plt.show()
+    forward_homography_fast = solution.compute_forward_homography_fast(H,source, (1088,1452,3))
+    result = forward_homography_fast.astype(np.uint8)
+    plt.imshow(result)
+    plt.show()
     #print(solution.test_homography(H,matches['match_p_src'],matches['match_p_dst'],25))
-    print(solution.meet_the_model_points(H,matches['match_p_src'],matches['match_p_dst'],25))
+    # print(solution.meet_the_model_points(H,matches['match_p_src'],matches['match_p_dst'],25))
