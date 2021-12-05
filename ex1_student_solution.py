@@ -608,6 +608,7 @@ if __name__ == '__main__':
     H_inv = np.linalg.inv(H)
     backward_homography = solution.compute_backward_mapping(H_inv,source,(1088,1452,3))
     result = backward_homography.astype(np.uint8)
+
     plt.imshow(result)
     plt.show()
     # forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
