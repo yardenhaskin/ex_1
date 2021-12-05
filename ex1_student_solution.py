@@ -389,27 +389,69 @@ class Solution:
         # Matrix multiplication
         trans_matrix = np.dot(backward_projective_homography, hom_matrix)
 
-        trans_matrix[0] = trans_matrix[0] / trans_matrix[2]
-        trans_matrix[1] = trans_matrix[1] / trans_matrix[2]
-        trans_matrix[2] = trans_matrix[2] / trans_matrix[2]
+        # dst_x_indices = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int).reshape(dst_image_shape[0],dst_image_shape[1])
+        # dst_y_indices = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int).reshape(dst_image_shape[0],dst_image_shape[1])
 
-        dst_x = trans_matrix[0,:].reshape(dst_image_shape[0],dst_image_shape[1])
-        dst_y = trans_matrix[1,:].reshape(dst_image_shape[0],dst_image_shape[1])
+        dst_x_indices = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int)
+        dst_y_indices = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int)
 
-        # x_new = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],
-        #                                                                            src_image.shape[1])
-        # y_new = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],
-        #                                                                            src_image.shape[1])
+        src_meshgrid = np.indices((src_image.shape[0],src_image.shape[1]))
+        src_matrix = np.vstack((src_meshgrid, np.ones((1,src_meshgrid.shape[1],src_meshgrid.shape[2])))).reshape(3,-1)
 
-        # Create meshgrid of source image coordinates
-        source_meshgrid = np.indices((src_image.shape[0], src_image.shape[1]))
-        # source_matrix = np.vstack((source_meshgrid, np.ones((1,src_image.shape[0],src_image.shape[1])))).reshape(3,-1)
+        #
+        # src_x_indices = src_matrix[0].reshape((src_image.shape[0],src_image.shape[1])).astype(np.int)
+        # src_y_indices = src_matrix[1].reshape((src_image.shape[0],src_image.shape[1])).astype(np.int)
 
-        src_x = source_meshgrid[0].reshape(src_image.shape[0],src_image.shape[1])
-        src_y = source_meshgrid[1].reshape(src_image.shape[0],src_image.shape[1])
+        src_x_indices = src_matrix[0].astype(np.int)
+        src_y_indices = src_matrix[1].astype(np.int)
 
-        result = scipy.interpolate.griddata((src_x,src_y),src_image[src_x,src_y,:],(dst_x,dst_y),method='cubic')
+        result = scipy.interpolate.griddata((src_x_indices,src_y_indices),src_image[src_x_indices,src_y_indices,:],(dst_x_indices, dst_y_indices),method='cubic',fill_value=0)
         return result
+        # trans_matrix[2] = trans_matrix[2] / trans_matrix[2]
+
+        # destination_points = np.array(np.transpose((y_indices.flatten()),x_indices.flatten()))
+
+        # meshgrid_x, meshgrid_y = np.indices((src_image.shape[0],src_image.shape[1]))
+        # data = np.array(meshgrid_y,meshgrid_x)
+        #
+        # r = src_image[meshgrid_y,meshgrid_x,0]
+        # g = src_image[meshgrid_y,meshgrid_x,1]
+        # b = src_image[meshgrid_y,meshgrid_x,2]
+        #
+        # r_griddata = scipy.interpolate.griddata(data,r,destination_points,method='cubic',fill_value=0).reshape((dst_image_shape[1],dst_image_shape[0]))
+        # g_griddata = scipy.interpolate.griddata(data, g, destination_points, method='cubic',fill_value=0).reshape((dst_image_shape[1], dst_image_shape[0]))
+        # b_griddata = scipy.interpolate.griddata(data, b, destination_points, method='cubic',fill_value=0).reshape((dst_image_shape[1], dst_image_shape[0]))
+
+        # result = np.zeros(dst_image_shape)
+        # result = np.dstack(r_griddata,g_griddata,b_griddata)
+        # x_new = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],src_image.shape[1])
+        # y_new = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],src_image.shape[1])
+        # # Make sure the pixels in the correct range
+        # x_new = np.clip(x_new, 0, dst_image_shape[0] - 1)
+        # y_new = np.clip(y_new, 0, dst_image_shape[1] - 1)
+        # new_image = np.zeros(dst_image_shape)
+        # new_image[x_new, y_new] = src_image[meshgrid[0], meshgrid[1]]
+
+
+
+        # # dst_x = trans_matrix[0,:].reshape(dst_image_shape[0],dst_image_shape[1])
+        # # dst_y = trans_matrix[1,:].reshape(dst_image_shape[0],dst_image_shape[1])
+        #
+        # # x_new = np.round(trans_matrix[0] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],
+        # #                                                                            src_image.shape[1])
+        # # y_new = np.round(trans_matrix[1] / trans_matrix[2]).astype(np.int).reshape(src_image.shape[0],
+        # #                                                                            src_image.shape[1])
+        #
+        # # Create meshgrid of source image coordinates
+        # source_meshgrid = np.indices((src_image.shape[0], src_image.shape[1]))
+        # # source_matrix = np.vstack((source_meshgrid, np.ones((1,src_image.shape[0],src_image.shape[1])))).reshape(3,-1)
+        #
+        # src_x = source_meshgrid[0].reshape(src_image.shape[0],src_image.shape[1])
+        # src_y = source_meshgrid[1].reshape(src_image.shape[0],src_image.shape[1])
+        #
+        # result = np.zeros(dst_image_shape)
+        # result = scipy.interpolate.griddata((src_x,src_y),src_image[src_x,src_y,:],(dst_x,dst_y),method='cubic')
+        # return result
 
 
     @staticmethod
@@ -560,6 +602,9 @@ if __name__ == '__main__':
     H = solution.compute_homography(matches['match_p_src'],matches['match_p_dst'],0.8,25)
     H_inv = np.linalg.inv(H)
     backward_homography = solution.compute_backward_mapping(H_inv,source,(1088,1452,3))
+    result = backward_homography.astype(np.uint8)
+    plt.imshow(result)
+    plt.show()
     # forward_homography_slow = solution.compute_forward_homography_slow(H,source, (1088,1452,3))
     # result = forward_homography_slow.astype(np.uint8)
     # plt.imshow(result)
