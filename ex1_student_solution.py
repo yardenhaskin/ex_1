@@ -405,7 +405,12 @@ class Solution:
         src_x_indices = src_matrix[0].astype(np.int)
         src_y_indices = src_matrix[1].astype(np.int)
 
-        result = scipy.interpolate.griddata((src_x_indices,src_y_indices),src_image[src_x_indices,src_y_indices,:],(dst_x_indices, dst_y_indices),method='cubic',fill_value=0)
+        result = scipy.interpolate.griddata((src_x_indices,src_y_indices),src_image[src_x_indices,src_y_indices,:],(dst_x_indices, dst_y_indices),method='cubic')
+        result = result.reshape(dst_image_shape)
+        # love = np.zeros(dst_image_shape)
+        # love[dst_x_indices,dst_y_indices,0] = result[:,0]
+        # love[dst_x_indices,dst_y_indices,1] = result[:,1]
+        # love[dst_x_indices,dst_y_indices,2] = result[:,2]
         return result
         # trans_matrix[2] = trans_matrix[2] / trans_matrix[2]
 
